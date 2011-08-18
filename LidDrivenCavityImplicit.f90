@@ -1,4 +1,5 @@
 !  This code calculates the flow in a lid driven cavity
+!=============================================================================80
 module constants
 
   use set_precision, only : dp
@@ -20,41 +21,166 @@ module constants
 
 end module constants
 
+!=============================================================================80
 module functions
 
   implicit none
 
-  contains
+contains
 
-function first_derivative(dl, var_l, var_r)
+!=============================================================================80
+  function first_derivative(dl, var_l, var_r)
 
-  use set_precision, only : dp
-  use constants,     only : half
+    use set_precision, only : dp
+    use constants,     only : half
 
-  real(dp), intent(in) :: dl, var_l, var_r
-  real(dp)             :: first_derivative
+    real(dp), intent(in) :: dl, var_l, var_r
+    real(dp)             :: first_derivative
 
-continue
+    continue
 
-  first_derivative = half*(var_r-var_l)/dl
+    first_derivative = half*(var_r-var_l)/dl
 
-end function first_derivative
+  end function first_derivative
 
-function second_derivative(dl, var_l, var_c, var_r)
+!=============================================================================80
+  function second_derivative(dl, var_l, var_c, var_r)
 
-  use set_precision, only : dp
-  use constants,     only : two
+    use set_precision, only : dp
+    use constants,     only : two
 
-  real(dp), intent(in) :: dl, var_l, var_c, var_r
-  real(dp)             :: second_derivative
+    real(dp), intent(in) :: dl, var_l, var_c, var_r
+    real(dp)             :: second_derivative
 
-continue
+    continue
 
-  second_derivative = (var_r-two*var_c+var_l)/dl**2
+    second_derivative = (var_l-two*var_c+var_r)/dl**2
 
-end function second_derivative
+  end function second_derivative
 end module functions
 
+!=============================================================================80
+
+subroutine rhs_y_implicit(i, imax, jmax,                         &
+                          dx, rho, C2, epsilon, mu, ulid,        &
+                          dt, B, q, RHS)
+
+  use set_precision, only : dp
+  use constants,     only : zero, two
+  use functions,     only : first_derivative, second_derivative
+
+  implicit none
+
+  integer,                          intent(in)  :: i, imax, jmax
+  real(dp),                         intent(in)  :: dx, rho, C2, epsilon, mu,ulid
+  real(dp), dimension(3,imax,jmax), intent(in)  :: q
+  real(dp), dimension(1,jmax),      intent(in)  :: dt
+  real(dp), dimension(1,jmax),      intent(in)  :: B
+  real(dp), dimension(3,jmax),      intent(out) :: RHS
+
+  integer  :: j
+  real(dp) :: dpdx, crvpx, avgpx, dudx, d2udx2, dvdx
+
+  continue
+
+  RHS(1,1) = -q(1,i,3)
+  RHS(2,1) = zero
+  RHS(3,1) = zero
+
+  do j = 2, jmax-1
+
+    dpdx  = first_derivative(dx, q(1,i-1,j), q(1,i+1,j))
+    crvpx = abs(q(1,i+1,j) - two*q(1,i,j) + q(1,i-1,j))
+    avgpx = abs(q(1,i+1,j) + two*q(1,i,j) + q(1,i-1,j))
+
+    dudx   = first_derivative(dx, q(2,i-1,j), q(2,i+1,j))
+    d2udx2 = second_derivative(dx, q(2,i-1,j), q(2,i,j), q(2,i+1,j))
+
+    dvdx   = first_derivative(dx, q(3,i-1,j), q(3,i+1,j))
+
+    RHS(1,j) = q(1,i,j)/(dt(1,j)*B(1,j)**2) - rho*dudx                     &
+             + (rho*C2*dx*d2udx2*crvpx)/(avgpx+epsilon)
+
+    RHS(2,j) = rho*q(2,i,j)/dt(1,j) - rho*q(2,i,j)*dudx - dpdx             &
+             + mu*(q(2,i+1,j)+q(2,i-1,j))/dx**2
+
+    RHS(3,j) = rho*q(3,i,j)/dt(1,j) - rho*q(2,i,j)*dvdx                    &
+             + mu*(q(3,i+1,j)+q(3,i-1,j))/dx**2
+
+  end do
+
+  RHS(1,jmax) = -q(1,i,jmax-2)
+  RHS(2,jmax) = Ulid
+  RHS(3,jmax) = zero
+
+end subroutine rhs_y_implicit
+
+!=============================================================================80
+
+subroutine lhs_y_implicit(i, imax, jmax,                         &
+                          dx, dy, rho, C2, epsilon, mu, ulid,        &
+                          dt, B, q, Low, Diag, Up)
+
+  use set_precision, only : dp
+  use constants,     only : zero, half, one, two
+
+  implicit none
+
+  integer,                          intent(in)  :: i, imax, jmax
+  real(dp),                         intent(in)  :: dx,dy,rho,C2,epsilon,mu,ulid
+  real(dp), dimension(1,jmax),      intent(in)  :: dt
+  real(dp), dimension(1,jmax),      intent(in)  :: B
+  real(dp), dimension(3,imax,jmax), intent(in)  :: q
+  real(dp), dimension(3, 3, jmax),  intent(out) :: Low, Diag, Up
+
+  integer  :: j
+  real(dp) :: crvpy, avgpy
+  real(dp), dimension(3,3) :: Ident
+
+  continue
+
+  Ident = reshape((/one, zero, zero, zero, one, zero, zero, zero, one/),(/3,3/))
+
+  Low(:,:,1)  = zero
+  Diag(:,:,1) = Ident
+  Up(:,:,1)   = zero
+  Up(1,1,1)   = -two
+
+! Set interior
+  do j = 2,jmax-1
+
+    crvpy = abs(q(1,i,j+1) - two*q(1,i,j) + q(1,i,j-1))
+    avgpy = abs(q(1,i,j+1) + two*q(1,i,j) + q(1,i,j-1))
+
+    Low(:,:,j) = zero
+    Low(1,3,j) = -half*rho/dy - (rho*C2/dy)*crvpy/(avgpy+epsilon)
+    Low(2,2,j) = -half*rho*q(3,i,j)/dy - mu/dy**2
+    Low(3,1,j) = -half/dy
+    Low(3,3,j) = -half*rho*q(3,i,j)/dy - mu/dy**2
+
+    Diag(:,:,j) = zero
+    Diag(1,1,j) = one/(dt(1,j)*B(1,j)**2)
+    Diag(1,3,j) = two*rho*C2*crvpy/(dy*(avgpy+epsilon))
+    Diag(2,2,j) = rho/dt(1,j) + two*mu*(one/dy**2 + one/dx**2)
+    Diag(3,3,j) = rho/dt(1,j) + two*mu*(one/dy**2 + one/dx**2)
+
+    Up(:,:,j) = zero
+    Up(1,3,j) = half*rho/dy - (rho*C2/dy)*crvpy/(avgpy+epsilon)
+    Up(2,2,j) = half*rho*q(3,i,j)/dy - mu/dy**2
+    Up(3,1,j) = half/dy
+    Up(3,3,j) = half*rho*q(3,i,j)/dy - mu/dy**2
+
+  end do
+! Set top wall
+  Low(:,:,jmax)  = zero
+  Low(1,1,jmax)  = -two
+  Diag(:,:,jmax) = Ident
+  Up(:,:,jmax)   = zero
+
+end subroutine lhs_y_implicit
+
+
+!=============================================================================80
 program LidDrivenCavityImplicit
 
   use set_precision, only : dp
@@ -69,12 +195,6 @@ program LidDrivenCavityImplicit
 !Derived constants
   real(dp) :: mu, nu, dx, dy, dtd, dtc
 
-!Main loop variables
-  real(dp) :: dudx, dudy, dvdx, dvdy, dpdx, dpdy
-  real(dp) :: d2udx2, d2udy2, d2vdx2, d2vdy2
-  real(dp) :: curvaturepx, averagepx, curvaturepy, averagepy
-
-!Residual loop variables
   real(dp) :: Pweightfactor
 
 !Constants defined by the problem statement
@@ -94,7 +214,6 @@ program LidDrivenCavityImplicit
                                          !in artifical viscosity
 
   real(dp), dimension(3) :: R, L1, L2, Linf
-  real(dp), dimension(3,3) :: Ident
   real(dp), allocatable, dimension(:,:,:) :: q, qn, Low, Diag, Up
   real(dp), allocatable, dimension(:,:)   :: dt, B, RHS
 
@@ -115,8 +234,6 @@ program LidDrivenCavityImplicit
   dy = (ymax-ymin)/real(jmax-1,dp)
   dtd = dx**2/(four*nu)
 
-  Ident = reshape((/one, zero, zero, zero, one, zero, zero, zero, one/),(/3,3/))
-
   allocate(q(3,imax,jmax))
   allocate(qn(3,imax,jmax))
   allocate(dt(imax,jmax), B(imax,jmax))
@@ -125,9 +242,14 @@ program LidDrivenCavityImplicit
 
 !Sets Boundary Conditions and initialize matrices
 
+  Low  = zero
+  Diag = zero
+  Up   = zero
+  RHS  = zero
+
+  q(1,:,:) = Po
   q(2,:,:) = zero
   q(3,:,:) = zero
-  q(1,:,:) = Po
 
   qn = zero
   dt = zero
@@ -140,8 +262,8 @@ program LidDrivenCavityImplicit
     L2(:)   = zero
     Linf(:) = zero
 
-!$OMP DO
-!write(*,*) n
+!$omp parallel private(i,j,dtc)
+  !$omp do
     do j = 2,jmax-1
       do i = 2,imax-1
 
@@ -156,75 +278,26 @@ program LidDrivenCavityImplicit
 
       end do
     end do
+ !$omp end do 
+!$omp end parallel 
 
 ! Loop over each line for y implicit
+!$omp parallel &
+!$omp shared(q, qn) &
+!$omp private(i, j, Low, Diag, Up, RHS)
+  !$omp do
     do i = 2,imax-1
-
-! Set bottom wall
-      Low(:,:,1)  = zero
-      Up(:,:,1)   = zero
-      Up(1,1,1)   = -two
-      Diag(:,:,1) = Ident
-
-      RHS(1,1) = -q(1,i,3)
-      RHS(2,1) = zero
-      RHS(3,1) = zero
-
-! Set top wall
-      Up(:,:,jmax)   = zero
-      Low(:,:,jmax)  = zero
-      Low(1,1,jmax)  = -two
-      Diag(:,:,jmax) = Ident
-
-      RHS(1,jmax) = -q(1,i,jmax-2)
-      RHS(2,jmax) = Ulid
-      RHS(3,jmax) = zero
-
-      do j = 2,jmax-1
-! Form tridiagonal system
-! X direction, fast
-        dpdx   = first_derivative(dx, q(1,i-1,j), q(1,i+1,j))
-        curvaturepx = abs(q(1,i+1,j) - two*q(1,i,j) + q(1,i-1,j))
-        averagepx   = abs(q(1,i+1,j) + two*q(1,i,j) + q(1,i-1,j))
-
-        dudx   = first_derivative(dx, q(2,i-1,j), q(2,i+1,j))
-        d2udx2 = (q(2,i+1,j) - two*q(2,i,j) + q(2,i-1,j))/(dx**2)
-        dvdx   = first_derivative(dx, q(3,i-1,j), q(3,i+1,j))
-        d2vdx2 = (q(3,i+1,j) - two*q(3,i,j) + q(3,i-1,j))/(dx**2)
-
-! Y direction, slow
-        curvaturepy = abs(q(1,i,j+1) - two*q(1,i,j) + q(1,i,j-1))
-        averagepy   = abs(q(1,i,j+1) + two*q(1,i,j) + q(1,i,j-1))
-
-        Low(:,:,j) = zero
-        Low(1,3,j) = -half*rho/dy - (rho*C2/dy)*curvaturepy/(averagepy+epsilon)
-        Low(2,2,j) = -half*rho*q(3,i,j)/dy - mu/dy**2
-        Low(3,1,j) = -half/dy
-        Low(3,3,j) = -half*rho*q(3,i,j)/dy - mu/dy**2
-
-        Diag(:,:,j) = zero
-        Diag(1,1,j) = one/(dt(i,j)*B(i,j)**2)
-        Diag(1,3,j) = two*rho*C2*curvaturepy/(dy*(averagepy+epsilon))
-        Diag(2,2,j) = rho/dt(i,j) + two*mu*(one/dy**2 + one/dx**2)
-        Diag(3,3,j) = rho/dt(i,j) + two*mu*(one/dy**2 + one/dx**2)
-
-        Up(:,:,j) = zero
-        Up(1,3,j) = half*rho/dy - (rho*C2/dy)*curvaturepy/(averagepy+epsilon)
-        Up(2,2,j) = half*rho*q(3,i,j)/dy - mu/dy**2
-        Up(3,1,j) = half/dy
-        Up(3,3,j) = half*rho*q(3,i,j)/dy - mu/dy**2
-
-        RHS(1,j) = q(1,i,j)/(dt(i,j)*B(i,j)**2) - rho*dudx                     &
-                 + (rho*C2*dx*d2udx2*curvaturepx)/(averagepx+epsilon)
-        RHS(2,j) = rho*q(2,i,j)/dt(i,j) - rho*q(2,i,j)*dudx - dpdx             &
-                 + mu*(q(2,i+1,j)+q(2,i-1,j))/dx**2
-        RHS(3,j) = rho*q(3,i,j)/dt(i,j) - rho*q(2,i,j)*dvdx                    &
-                 + mu*(q(3,i+1,j)+q(3,i-1,j))/dx**2
-      end do
+! Form LHS
+      call lhs_y_implicit(i, imax, jmax, dx, dy, rho, C2, epsilon, mu, ulid, &
+                         dt(i,:), B(i,:), q, Low, Diag, Up) 
+! Form RHS
+      call rhs_y_implicit(i, imax, jmax, dx, rho, C2, epsilon, mu, ulid, &
+                         dt(i,:), B(i,:), q, RHS)
 ! Solve the line implicit system
       call triblocksolve(3, jmax, Low, Diag, Up, RHS, qn(:,i,:))
     end do
-!$OMP END DO
+  !$omp end do
+!$omp end parallel
 
 !    L1(:) =      L1(:)  / real((imax-2)*(jmax-2),dp)
 !    L2(:) = sqrt(L2(:)) / real((imax-2)*(jmax-2),dp)
