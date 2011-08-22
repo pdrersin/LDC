@@ -321,6 +321,8 @@ program LidDrivenCavityImplicit
     end if
   end do
 
+  deallocate(Low, Diag, Up, RHS, dt, B, qn)
+
   open(20, FILE='Lid_Driven_Cavity_Implicit.tec', status='unknown')
 
   write(20,*) 'TITLE="Lid Driven Cavity Implicit"'
@@ -368,5 +370,7 @@ program LidDrivenCavityImplicit
   end do
 
   close(20)
+
+  deallocate(q)
 
 end program LidDrivenCavityImplicit

@@ -1,4 +1,4 @@
-FC=ifort
+FC=gfortran
 FCFLAGS=-O -g -pg #-traceback -openmp -parallel -fpp
 
 all: LDC

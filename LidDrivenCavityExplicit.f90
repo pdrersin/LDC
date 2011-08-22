@@ -164,9 +164,9 @@ program LidDrivenCavityExplicit
         curvaturepx = abs(q(1,i+1,j) - two*q(1,i,j) + q(1,i-1,j))
         averagepx   = abs(q(1,i+1,j) + two*q(1,i,j) + q(1,i-1,j))
 
-        dudx   = first_derivative(dx, q(2,i-1,j), q(2,i+1,j))
+        dudx   = first_derivative( dx, q(2,i-1,j),           q(2,i+1,j))
         d2udx2 = second_derivative(dx, q(2,i-1,j), q(2,i,j), q(2,i+1,j))
-        dvdx   = first_derivative(dx, q(3,i-1,j), q(3,i+1,j))
+        dvdx   = first_derivative( dx, q(3,i-1,j),           q(3,i+1,j))
         d2vdx2 = second_derivative(dx, q(3,i-1,j), q(3,i,j), q(3,i+1,j))
 
 ! Y direction, slow
@@ -174,10 +174,10 @@ program LidDrivenCavityExplicit
         curvaturepy = abs(q(1,i,j+1) - two*q(1,i,j) + q(1,i,j-1))
         averagepy   = abs(q(1,i,j+1) + two*q(1,i,j) + q(1,i,j-1))
 
-        dudy   = first_derivative(dy, q(2,i,j-1), q(2,i,j+1))
-        d2udy2 = second_derivative(dx, q(2,i,j-1), q(2,i,j), q(2,i,j+1))
-        dvdy   = first_derivative(dy, q(3,i,j-1), q(3,i,j+1))
-        d2vdy2 = second_derivative(dx, q(3,i,j-1), q(3,i,j), q(3,i,j+1))
+        dudy   = first_derivative( dy, q(2,i,j-1),           q(2,i,j+1))
+        d2udy2 = second_derivative(dy, q(2,i,j-1), q(2,i,j), q(2,i,j+1))
+        dvdy   = first_derivative( dy, q(3,i,j-1),           q(3,i,j+1))
+        d2vdy2 = second_derivative(dy, q(3,i,j-1), q(3,i,j), q(3,i,j+1))
       
         S = rho*C2*(dx*(curvaturepx/(epsilon+averagepx))*d2udx2 +              &
                     dy*(curvaturepy/(epsilon+averagepy))*d2vdy2)
