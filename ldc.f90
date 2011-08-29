@@ -6,9 +6,10 @@
 
 program LDC
 
-  use fileio, only : read_input, write_output
-  use setup,  only : ldc_allocate, ldc_deallocate, solver, &
-                     x_nodes, y_nodes, soln
+  use fileio,  only : read_input, write_output
+  use setup,   only : ldc_allocate, ldc_deallocate, solver,                    &
+                      x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new
+  use solvers, only : ldc_explicit
 
   implicit none
 
@@ -24,7 +25,7 @@ program LDC
   case('explicit')
     write(*,*) 'Beginning explict solve...'
 
-!    call ldc_explicit
+    call ldc_explicit(x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new)
 
   case('implicit')
     write(*,*) 'Beginning implict solve...'
