@@ -40,7 +40,7 @@ module functions
 
       continue
 
-      second_derivative = (var_r-two*var_c+var_l)/dl**2
+      second_derivative = (var_r-two*var_c+var_l)/(dl*dl)
 
     end function second_derivative
 

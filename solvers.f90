@@ -12,7 +12,7 @@ contains
 
     use set_precision, only : dp
     use set_constants, only : zero, two
-    use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage
+    use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage, conv_toler
     use functions,     only : set_beta, set_dt
 
     implicit none
@@ -35,30 +35,46 @@ contains
       L2(:)   = zero
       Linf(:) = zero
 
+! Calculate artifical compressibility terms
       do j = 2, y_nodes-1
         do i = 2, x_nodes-1
           beta(i,j) = set_beta(soln(2,i,j), k, u_lid)
+        end do
+      end do
+! Calculate local timestep, separate loops seems to be better for cache
+      do j = 2, y_nodes-1
+        do i = 2, x_nodes-1
           dt(i,j)   = set_dt(dx, dtd, cfl, soln(2,i,j), soln(3,i,j), beta(i,j))
         end do
       end do
 
+!$omp parallel
+!$omp private(i, j, eq, R)
+!$omp reduction(+ : L1, L2)
+!$omp reduction(max : Linf)
+  !$omp do
+! Residual loop
       do j = 2, y_nodes-1
         do i = 2, x_nodes-1
 
           R = create_residual(i, j, x_nodes, y_nodes, dx, dy, beta(i,j), soln )
 
+! Update residual
           do eq = 1,3
             L1(eq)   = L1(eq) + R(eq)
             L2(eq)   = L2(eq) + R(eq)**2
             Linf(eq) = max(Linf(eq), R(eq))
           end do
 
+! Euler explicit solve
           do eq = 1,3
             soln_new(eq,i,j) = soln(eq,i,j) - dt(i,j)*R(eq)
           end do
 
         end do
       end do
+  !$omp end do
+!$omp end parallel
 
 ! Update L1 and L2 residuals
       L1(:) =      L1(:)  / real((x_nodes-2)*(y_nodes-2),dp)
@@ -86,6 +102,11 @@ contains
       if (mod(iter,1000) == 0) then
         write(*,300) iter, L2(1), L2(2), L2(3)
 300     format(1X,i8,2(e15.6),3(e15.6),4(e15.6))
+
+        if(L2(2) <= conv_toler .and. L2(3) <= conv_toler) then
+          write(*,*) "Solution has converged"
+          return
+        end if
       end if
 
     end do iter_loop
