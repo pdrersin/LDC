@@ -48,9 +48,9 @@ contains
         end do
       end do
 
-!$omp parallel
-!$omp private(i, j, eq, R)
-!$omp reduction(+ : L1, L2)
+!$omp parallel &
+!$omp private(i, j, eq, R) &
+!$omp reduction(+ : L1, L2) &
 !$omp reduction(max : Linf)
   !$omp do
 ! Residual loop
