@@ -1,10 +1,10 @@
-!=============================================================================80
+!================================== ldc ======================================80
 !
-!
+! Solves the lid driven cavity problem for square, cartesian domains
 !
 !=============================================================================80
 
-program LDC
+program ldc
 
   use fileio,  only : read_input, write_output
   use setup,   only : ldc_allocate, ldc_deallocate, solver,                    &
@@ -42,5 +42,5 @@ program LDC
 
   call ldc_deallocate()
 
-end program LDC
+end program ldc
 

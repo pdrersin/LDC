@@ -8,6 +8,12 @@ module solvers
 
 contains
 
+!=============================== ldc_explicit ================================80
+!
+! The main routine for the explicit solve
+!
+!=============================================================================80
+
   subroutine ldc_explicit(x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new)
 
     use set_precision, only : dp
@@ -41,19 +47,21 @@ contains
           beta(i,j) = set_beta(soln(2,i,j), k, u_lid)
         end do
       end do
+
 ! Calculate local timestep, separate loops seems to be better for cache
       do j = 2, y_nodes-1
         do i = 2, x_nodes-1
-          dt(i,j)   = set_dt(dx, dtd, cfl, soln(2,i,j), soln(3,i,j), beta(i,j))
+          dt(i,j) = set_dt(dx, dtd, cfl, soln(2,i,j), soln(3,i,j), beta(i,j))
         end do
       end do
+
+! Residual loop
 
 !$omp parallel &
 !$omp private(i, j, eq, R) &
 !$omp reduction(+ : L1, L2) &
 !$omp reduction(max : Linf)
   !$omp do
-! Residual loop
       do j = 2, y_nodes-1
         do i = 2, x_nodes-1
 
@@ -113,6 +121,11 @@ contains
 
   end subroutine ldc_explicit
 
+!=============================== create_residual =============================80
+!
+! Forms the ldc residual, it is a pure, inlineable function
+!
+!=============================================================================80
 
   pure function create_residual(i, j, x_nodes, y_nodes, dx, dy, beta, soln)
 

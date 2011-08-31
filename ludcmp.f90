@@ -4,6 +4,7 @@
 ! most ( CFD related ) matrices passed to it will be diagonally dominant
 !
 !=============================================================================80
+
 subroutine ludcmp(neq, matrix, lower, upper)
 
   use set_precision, only : dp
@@ -71,6 +72,12 @@ subroutine ludcmp(neq, matrix, lower, upper)
 
 end subroutine ludcmp
 
+!================================= luvkslv ===================================80
+!
+! Performs the back substitution for the tridiagonal solver
+!
+!=============================================================================80
+
 subroutine lubkslv(neq, lower, upper, b, x)
 
   use set_precision, only : dp
@@ -111,6 +118,12 @@ subroutine lubkslv(neq, lower, upper, b, x)
   end do
 
 end subroutine lubkslv
+
+!=============================== matrix_inv ==================================80
+!
+! Uses ludcmp and lubkslv to find a matrix inverse
+!
+!=============================================================================80
 
 subroutine matrix_inv(neq, matrix, inv)
 

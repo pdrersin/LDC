@@ -4,7 +4,7 @@ module fileio
   
 contains
 
-!=============================================================================80
+!================================= read_input ================================80
 !
 ! Reads the namelists within ldc.nml
 !
@@ -45,7 +45,7 @@ contains
 
   end subroutine read_input
 
-!=============================================================================80
+!============================= write_output ==================================80
 !
 ! Writes the solution to a tecplot file readable by Tecplot or Paraview
 !

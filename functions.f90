@@ -4,7 +4,7 @@ module functions
 
   contains
 
-!=============================================================================80
+!============================= first_derivative ==============================80
 !
 ! calculates a 2nd order first derivative
 !
@@ -24,7 +24,7 @@ module functions
 
     end function first_derivative
 
-!=============================================================================80
+!========================== second_derivative ================================80
 !
 ! calculates a 2nd order second derivative
 !
@@ -44,7 +44,7 @@ module functions
 
     end function second_derivative
 
-!=============================================================================80
+!============================= set_beta ======================================80
 !
 ! sets Chorin's artificial compressibility factor
 !
@@ -63,7 +63,7 @@ module functions
 
     end function set_beta
 
-!=============================================================================80
+!================================ set_dt =====================================80
 !
 ! sets the local timestep
 !
@@ -87,7 +87,7 @@ module functions
 
     end function set_dt
 
-!=============================================================================80
+!=========================== find_available_unit =============================80
 !
 ! finds an available I/O unit
 !
