@@ -240,9 +240,7 @@ contains
 ! Residual loop
 
 !$omp parallel &
-!$omp private(i, j, eq, Low, Diag, Up, RHS) &
-!$omp reduction(+ : L1, L2) &
-!$omp reduction(max : Linf)
+!$omp private(i, Low, Diag, Up, RHS) 
   !$omp do
       do i = 2, x_nodes-1
 ! Form LHS
