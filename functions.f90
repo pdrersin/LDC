@@ -75,14 +75,15 @@ module functions
       use set_constants,  only : one, two, four
 
       real(dp), intent(in) :: dx, dtd, cfl, u_vel, v_vel, beta
-      real(dp)             :: dtc
+      real(dp)             :: dtc, q
       real(dp)             :: set_dt
 
       continue
 
-      dtc = two*dx /                                                           &
-            max((abs(u_vel + sqrt(u_vel**2 + four*beta**2))),                  &
-                (abs(v_vel + sqrt(v_vel**2 + four*beta**2))))
+      q = sqrt(u_vel**2 + v_vel**2)
+
+      dtc = dx/(two*q+beta)
+
       set_dt = cfl*(one/((one/dtc) + (one/dtd)))
 
     end function set_dt

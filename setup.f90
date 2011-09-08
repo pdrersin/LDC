@@ -26,7 +26,7 @@ module setup
   public :: rho
   public :: u_lid
   public :: p_guage
-
+  public :: mu
   public :: nu      !derived
 
 ! solver variables
@@ -43,7 +43,7 @@ module setup
   integer  :: x_nodes, y_nodes
   real(dp) :: xmin, xmax, ymin, ymax, dx, dy, length
 
-  real(dp) :: re, rho, u_lid, p_guage, nu, dtd
+  real(dp) :: re, rho, u_lid, p_guage, mu, nu, dtd
 
   character(len=8) :: solver
 
@@ -69,8 +69,6 @@ contains
     use set_constants,  only : zero, four, big
 
     implicit none
-
-    real(dp) :: mu
 
     continue
 
