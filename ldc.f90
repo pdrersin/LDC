@@ -30,6 +30,10 @@ program ldc
   case('implicit')
     write(*,*) 'Beginning implict solve...'
 
+    call ldc_implicit(x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new)
+
+  case('testing')
+    write(*,*) 'Beginning testing path solve...'
     call ldc_implicit_t(x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new)
 
   case default

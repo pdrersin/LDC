@@ -16,7 +16,7 @@
 /
 
 &solver_properties
-  solver     = 'implicit'
+  solver     = 'testing'
   max_iter   = 2000
   cfl        = 1.0
   k          = 0.01
