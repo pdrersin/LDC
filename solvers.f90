@@ -6,6 +6,7 @@ module solvers
 
   public :: ldc_explicit
   public :: ldc_implicit
+  public :: ldc_implicit_t
 
 contains
 
@@ -428,5 +429,205 @@ contains
     Up(:,:,y_nodes)   = zero
 
   end subroutine lhs_y_implicit
+
+!=============================== ldc_implicit ================================80
+!
+! The main routine for the implicit solve
+!
+!=============================================================================80
+
+  subroutine ldc_implicit_t(x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new)
+
+    use set_precision, only : dp
+    use set_constants, only : zero, half, two
+    use setup,         only : max_iter,dtd,cfl,k,u_lid,p_guage,conv_toler,mu,rho
+    use functions,     only : set_beta, set_dt
+
+    implicit none
+
+    integer,                                  intent(in)    :: x_nodes, y_nodes
+    real(dp),                                 intent(in)    :: dx, dy
+    real(dp), dimension(x_nodes, y_nodes),    intent(inout) :: dt, beta
+    real(dp), dimension(3, x_nodes, y_nodes), intent(inout) :: soln, soln_new
+
+    real(dp), dimension(3) :: R, L1, L2, Linf
+    real(dp), allocatable, dimension(:,:)   :: RHS
+    real(dp), allocatable, dimension(:,:,:) :: Low, Diag, Up
+
+    integer  :: iter, i, j, eq
+    real(dp) :: Pweightfactor
+
+    continue
+
+    allocate(Low(3,3,y_nodes),Diag(3,3,y_nodes),Up(3,3,y_nodes),RHS(3,y_nodes))
+
+    Low  = zero
+    Diag = zero
+    Up   = zero
+    RHS  = zero
+
+    iter_loop : do iter = 1, max_iter
+      R(:)    = zero
+      L1(:)   = zero
+      L2(:)   = zero
+      Linf(:) = zero
+
+! Calculate artifical compressibility terms
+      do j = 2, y_nodes-1
+        do i = 2, x_nodes-1
+          beta(i,j) = set_beta(soln(2,i,j), k, u_lid)
+        end do
+      end do
+
+! Calculate local timestep, separate loops seems to be better for cache
+      do j = 2, y_nodes-1
+        do i = 2, x_nodes-1
+          dt(i,j) = set_dt(dx, dtd, cfl, soln(2,i,j), soln(3,i,j), beta(i,j))
+        end do
+      end do
+
+! Residual loop
+
+!$omp parallel &
+!$omp private(i, Low, Diag, Up, RHS) 
+  !$omp do
+      do i = 2, x_nodes-1
+! Form LHS
+        call lhs_y_implicit_t(i, x_nodes, y_nodes, dx, dy, dt(i,:), beta(i,:), &
+                              soln, Low, Diag, Up) 
+! Form RHS
+        call rhs_y_implicit(i, x_nodes, y_nodes, dx, dt(i,:), beta(i,:), &
+                            soln, RHS)
+        do j = 1, y_nodes-1
+          RHS(:,j) = RHS(:,j+1)
+        end do
+
+        RHS(2,y_nodes-2) = RHS(2,y_nodes-2) &
+                         + u_lid*(half*rho*soln(3,i,y_nodes-1)/dy + mu/dy**2)
+
+! Solve the line implicit system
+        call triblocksolve(3, y_nodes-2, Low(:,:,1:y_nodes-2), &
+                           Diag(:,:,1:y_nodes-2), Up(:,:,1:y_nodes-2), &
+                           RHS(:,1:y_nodes-2), soln_new(:,i,2:y_nodes-1))
+
+      end do
+  !$omp end do
+!$omp end parallel
+
+! Update L1 and L2 residuals
+!      L1(:) =      L1(:)  / real((x_nodes-2)*(y_nodes-2),dp)
+!      L2(:) = sqrt(L2(:)) / real((x_nodes-2)*(y_nodes-2),dp)
+
+! Update soln
+      soln = soln_new
+
+!Calculate side wall pressures
+      do i = 1,x_nodes
+        soln(1,i,1)       = two*soln(1,i,2)         - soln(1,i,3)
+        soln(1,i,y_nodes) = two*soln(1,i,y_nodes-1) - soln(1,i,y_nodes-2)
+      end do
+
+      do j = 1,y_nodes
+        soln(1,1,j)       = two*soln(1,2,j)         - soln(1,3,j)
+        soln(1,x_nodes,j) = two*soln(1,x_nodes-1,j) - soln(1,x_nodes-2,j)
+      end do
+
+!Pressure rescaling at the center point of the bottom floor
+      Pweightfactor = soln(1,(x_nodes-x_nodes/2),1) - p_guage
+      soln(1,:,:)   = soln(1,:,:) - Pweightfactor
+  
+!Residual Calculations
+      if (mod(iter,1000) == 0) then
+        write(*,300) iter, L2(1), L2(2), L2(3)
+300     format(1X,i8,2(e15.6),3(e15.6),4(e15.6))
+
+        L2(2) = 100
+
+        if(L2(2) <= conv_toler .and. L2(3) <= conv_toler) then
+          write(*,*) "Solution has converged"
+          return
+        end if
+      end if
+
+    end do iter_loop
+
+    deallocate(Low, Diag, Up, RHS)
+
+  end subroutine ldc_implicit_t
+!=============================================================================80
+!
+!
+!
+!=============================================================================80
+  subroutine lhs_y_implicit_t(i, x_nodes, y_nodes, dx, dy, dt, beta, &
+                            soln, Low, Diag, Up)
+
+    use set_precision, only : dp
+    use set_constants, only : zero, half, one, two
+    use setup,         only : rho, mu, visc_eps, c2
+
+    implicit none
+
+    integer,                                  intent(in)  :: i, x_nodes, y_nodes
+    real(dp),                                 intent(in)  :: dx, dy
+    real(dp), dimension(1,y_nodes),           intent(in)  :: dt, beta
+    real(dp), dimension(3, x_nodes, y_nodes), intent(in)  :: soln
+    real(dp), dimension(3, 3, y_nodes),       intent(out) :: Low, Diag, Up
+
+    integer  :: j, k
+    real(dp) :: crvpy, avgpy
+
+    continue
+
+    do j = 2,y_nodes-1
+
+      k = j-1
+
+      crvpy = abs(soln(1,i,j+1) - two*soln(1,i,j) + soln(1,i,j-1))
+      avgpy = abs(soln(1,i,j+1) + two*soln(1,i,j) + soln(1,i,j-1))
+
+      Low(1,1,k) = zero
+      Low(2,1,k) = zero
+      Low(3,1,k) = -half/dy
+      Low(1,2,k) = zero
+      Low(2,2,k) = -half*rho*soln(3,i,j)/dy - mu/dy**2
+      Low(3,2,k) = zero
+      Low(1,3,k) = -half*rho/dy - (rho*C2/dy)*crvpy/(avgpy+visc_eps)
+      Low(2,3,k) = zero
+      Low(3,3,k) = -half*rho*soln(3,i,j)/dy - mu/dy**2
+
+      Diag(1,1,k) = one/(dt(1,j)*beta(1,j)**2)
+      Diag(2,1,k) = zero
+      Diag(3,1,k) = zero
+      Diag(1,2,k) = zero
+      Diag(2,2,k) = rho/dt(1,j) + two*mu*(one/dy**2 + one/dx**2)
+      Diag(3,2,k) = zero
+      Diag(1,3,k) = two*rho*C2*crvpy/(dy*(avgpy+visc_eps))
+      Diag(2,3,k) = zero
+      Diag(3,3,k) = rho/dt(1,j) + two*mu*(one/dy**2 + one/dx**2)
+
+      Up(1,1,k) = zero
+      Up(2,1,k) = zero
+      Up(3,1,k) = half/dy
+      Up(1,2,k) = zero
+      Up(2,2,k) = half*rho*soln(3,i,j)/dy - mu/dy**2
+      Up(3,2,k) = zero
+      Up(1,3,k) = half*rho/dy - (rho*C2/dy)*crvpy/(avgpy+visc_eps)
+      Up(2,3,k) = zero
+      Up(3,3,k) = half*rho*soln(3,i,j)/dy - mu/dy**2
+
+      if ( k == 1 ) then
+        Diag(1,1,k) = Diag(1,1,k) - one/dy
+        Up(1,1,k)   = Up(1,1,k)   + half/dy
+      end if
+
+      if ( k == y_nodes-2 ) then
+        Diag(1,1,k) = Diag(1,1,k) + one/dy
+        Low(1,1,k)  = Low(1,1,k)  - half/dy
+      end if
+
+    end do
+
+  end subroutine lhs_y_implicit_t
 
 end module solvers
