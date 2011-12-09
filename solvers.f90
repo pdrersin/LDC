@@ -503,7 +503,9 @@ contains
         end do
 
         RHS(2,y_nodes-2) = RHS(2,y_nodes-2) &
-                         + u_lid*(half*rho*soln(3,i,y_nodes-1)/dy + mu/dy**2)
+                         - u_lid*(half*rho*soln(3,i,y_nodes-1)/dy - mu/dy**2)
+        Low(:,:,1) = zero
+        Up(:,:,y_nodes-2) = zero
 
 ! Solve the line implicit system
         call triblocksolve(3, y_nodes-2, Low(:,:,1:y_nodes-2), &
