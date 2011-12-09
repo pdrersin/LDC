@@ -624,8 +624,8 @@ contains
       end if
 
       if ( k == y_nodes-2 ) then
-        Diag(1,1,k) = Diag(1,1,k) + one/dy
         Low(1,1,k)  = Low(1,1,k)  - half/dy
+        Diag(1,1,k) = Diag(1,1,k) + one/dy
       end if
 
     end do
