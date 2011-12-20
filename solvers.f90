@@ -482,7 +482,8 @@ contains
     bc = zero
     bc(1,1) = one
 
-    call matrix_inv(3, U(:,:,2), inv)
+!    call matrix_inv(3, U(:,:,2), inv)
+    call mat_inv_3x3(U(:,:,2), inv)
 
     inv = matmul(bc, inv)
 
@@ -490,7 +491,8 @@ contains
     U(:,:,1) = U(:,:,1) - matmul(inv, D(:,:,2))
     RHS(:,1) = RHS(:,1) - matmul(inv, RHS(:,2))
 
-    call matrix_inv(3, L(:,:,y_nodes-1), inv)
+!    call matrix_inv(3, L(:,:,y_nodes-1), inv)
+    call mat_inv_3x3(L(:,:,y_nodes-1), inv)
 
     inv = matmul(bc, inv)
 
