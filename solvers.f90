@@ -432,11 +432,38 @@ contains
 
   end subroutine lhs_y_implicit
 
+!============================= bc_mod_y_implicit =============================80
+!
+! This routine modifies the extrapolated BC eq's to stay block tridiagonal
+!
 !=============================================================================80
+! How it works:
+! Starting with...
+! |D1 U1 A  0    0    0    0   |       |  RHS1  | Need to eliminate A
+! |L2 D2 U2 0    0    0    0   |       |  RHS2  |
+! |0  L3 D3 U3   0    0    0   |       |  RHS3  |
+! |0  0  L. D.   U.   0    0   |*{Q} = |  RHS.  |
+! |0  0  0  LN-2 DN-2 UN-2 0   |       | RHSN-2 |
+! |0  0  0  0    LN-1 DN-1 UN-1|       | RHSN-1 |
+! |0  0  0  0    B    LN   DN  |       | RHSN   | Need to eliminate B
 !
+! Deal with A first by temporarily modifying 2nd row
 !
+! |  D      U    A 0 0 0 0| ... |  RHS1  |
+! |AU2'L2 AU2'D2 A 0 0 0 0| ... |AU2'RHS2|
 !
-!=============================================================================80
+! and subtracting to get
+!
+! |D1-AU2'L2 U1-AU2'D2 0  0 0 0 0| ... |RHS1-AU2'RHS2|
+! |    L2        D2    U2 0 0 0 0| ... |     RHS2    |
+!
+! Performing similar work for the bottom two rows...
+!
+! |0 0 0 0 LN-1     DN-1           UN-1     | ... |     RHSN-1      |
+! |0 0 0 0 0    LN-BLN-1'DN-1  DN-BLN-1'UN-1| ... |RHSN-BLN-1'RHSN-1|
+!
+! And this preserves the block tridiagonal system
+
   subroutine bc_mod_y_implicit(y_nodes, L, D, U, RHS)
 
     use set_precision, only : dp
