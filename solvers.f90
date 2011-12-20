@@ -249,6 +249,9 @@ contains
 ! Form RHS
         call rhs_y_implicit(i, x_nodes, y_nodes, dx, dt(i,:), beta(i,:), &
                             soln, RHS)
+! Modify structure for BC
+!        call bc_mod_y_implicit(y_nodes, Low, Diag, Up, RHS)
+
 ! Solve the line implicit system
         call triblocksolve(3, y_nodes, Low, Diag, Up, RHS, soln_new(:,i,:))
 
@@ -428,5 +431,46 @@ contains
     Up(:,:,y_nodes)   = zero
 
   end subroutine lhs_y_implicit
+
+!=============================================================================80
+!
+!
+!
+!=============================================================================80
+  subroutine bc_mod_y_implicit(y_nodes, L, D, U, RHS)
+
+    use set_precision, only : dp
+    use set_constants, only : zero, half, one, two
+
+    implicit none
+
+    integer,                          intent(in)    :: y_nodes
+    real(dp), dimension(3,3,y_nodes), intent(inout) :: L, D, U
+    real(dp), dimension(3,y_nodes),   intent(inout) :: RHS
+
+    real(dp), dimension(3,3) :: bc, inv
+
+    continue
+
+    bc = zero
+    bc(1,1) = one
+
+    call matrix_inv(3, U(:,:,2), inv)
+
+    inv = matmul(bc, inv)
+
+    D(:,:,1) = D(:,:,1) - matmul(inv, L(:,:,2))
+    U(:,:,1) = U(:,:,1) - matmul(inv, D(:,:,2))
+    RHS(:,1) = RHS(:,1) - matmul(inv, RHS(:,2))
+
+    call matrix_inv(3, L(:,:,y_nodes-1), inv)
+
+    inv = matmul(bc, inv)
+
+    L(:,:,y_nodes) = L(:,:,y_nodes) - matmul(inv, D(:,:,y_nodes-1))
+    D(:,:,y_nodes) = D(:,:,y_nodes) - matmul(inv, U(:,:,y_nodes-1))
+    RHS(:,y_nodes) = RHS(:,y_nodes) - matmul(inv, RHS(:,y_nodes-1))
+
+  end subroutine bc_mod_y_implicit
 
 end module solvers
