@@ -17,7 +17,7 @@
 
 &solver_properties
   solver     = 'implicit'
-  max_iter   = 1000
+  max_iter   = 5000
   cfl        = 5.0
   k          = 0.01
   c2         = 0.01

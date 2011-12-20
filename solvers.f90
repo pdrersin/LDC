@@ -99,7 +99,7 @@ contains
       end do
 
       do i = 1,x_nodes
-        soln(1,i,1)       = two*soln(1,i,2)      - soln(1,i,3)
+        soln(1,i,1)       = two*soln(1,i,2)         - soln(1,i,3)
         soln(1,i,y_nodes) = two*soln(1,i,y_nodes-1) - soln(1,i,y_nodes-2)
       end do
 
@@ -250,7 +250,7 @@ contains
         call rhs_y_implicit(i, x_nodes, y_nodes, dx, dt(i,:), beta(i,:), &
                             soln, RHS)
 ! Modify structure for BC
-!        call bc_mod_y_implicit(y_nodes, Low, Diag, Up, RHS)
+        call bc_mod_y_implicit(y_nodes, Low, Diag, Up, RHS)
 
 ! Solve the line implicit system
         call triblocksolve(3, y_nodes, Low, Diag, Up, RHS, soln_new(:,i,:))
@@ -321,7 +321,7 @@ contains
 
     continue
 
-    RHS(1,1) = -soln(1,i,3)
+    RHS(1,1) = zero
     RHS(2,1) = zero
     RHS(3,1) = zero
 
@@ -347,7 +347,7 @@ contains
 
     end do
 
-    RHS(1,y_nodes) = -soln(1,i,y_nodes-2)
+    RHS(1,y_nodes) = zero
     RHS(2,y_nodes) = u_lid
     RHS(3,y_nodes) = zero
 
