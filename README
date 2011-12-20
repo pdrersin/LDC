@@ -1,14 +1,12 @@
 Lid Driven Cavity
 Explicit/Implicit finite difference solver
 
+Compile using make
+
 Fully checked with Valgrind 3.4.0 using:
 
  valgrind --leak-check=full --show-reachable=yes ./<executable>
 
 No errors!
-
-Ignore the makefile for now, compile using something like:
-
-gfortran -O2 -o ldc set_precision.f90 set_constants.f90 functions.f90 setup.f90 fileio.f90 ludcmp.f90 triblocksolve.f90 solvers.f90 ldc.f90
 
 Input file is ldc.nml, should be self explanatory
