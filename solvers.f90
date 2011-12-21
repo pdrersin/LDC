@@ -268,8 +268,8 @@ contains
           L2(3) = L2(3) + ((soln_new(3,i,j)-soln(3,i,j))/dt(i,j))**2
         end do
       end do
-!      L1(:) =      L1(:)  / real((x_nodes-2)*(y_nodes-2),dp)
-!      L2(:) = sqrt(L2(:)) / real((x_nodes-2)*(y_nodes-2),dp)
+      L1(:) =      L1(:)  / real((x_nodes-2)*(y_nodes-2),dp)
+      L2(:) = sqrt(L2(:)) / real((x_nodes-2)*(y_nodes-2),dp)
 
 ! Update soln
       soln = soln_new
@@ -288,8 +288,6 @@ contains
       if (mod(iter,1000) == 0) then
         write(*,300) iter, L2(1), L2(2), L2(3)
 300     format(1X,i8,2(e15.6),3(e15.6),4(e15.6))
-
-        L2(2) = 100
 
         if(L2(2) <= conv_toler .and. L2(3) <= conv_toler) then
           write(*,*) "Solution has converged"
