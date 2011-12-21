@@ -260,6 +260,14 @@ contains
 !$omp end parallel
 
 ! Update L1 and L2 residuals
+
+      do i = 2, x_nodes-1
+        do j = 2, y_nodes-1
+          L2(1) = L2(1) + ((soln_new(1,i,j)-soln(1,i,j))/(beta(i,j)*dt(i,j)))**2
+          L2(2) = L2(2) + ((soln_new(2,i,j)-soln(2,i,j))/dt(i,j))**2
+          L2(3) = L2(3) + ((soln_new(3,i,j)-soln(3,i,j))/dt(i,j))**2
+        end do
+      end do
 !      L1(:) =      L1(:)  / real((x_nodes-2)*(y_nodes-2),dp)
 !      L2(:) = sqrt(L2(:)) / real((x_nodes-2)*(y_nodes-2),dp)
 
