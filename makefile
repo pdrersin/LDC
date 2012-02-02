@@ -1,5 +1,5 @@
 FC=gfortran
-FCFLAGS=-O2 -funroll-loops -finline-functions #-traceback -openmp -parallel -fpp
+FCFLAGS=-O3 #-traceback -openmp -parallel -fpp
 
 all: LDC
 

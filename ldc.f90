@@ -9,7 +9,7 @@ program ldc
   use fileio,  only : read_input, write_output
   use setup,   only : ldc_allocate, ldc_deallocate, solver,                    &
                       x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new
-  use solvers, only : ldc_explicit, ldc_implicit
+  use solvers, only : ldc_explicit, ldc_implicit, ldc_sgs
 
   implicit none
 
@@ -31,6 +31,11 @@ program ldc
     write(*,*) 'Beginning implict solve...'
 
     call ldc_implicit(x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new)
+
+  case('sgs')
+    write(*,*) 'Beginning SGS solve...'
+
+    call ldc_sgs(x_nodes, y_nodes, dx, dy, dt, beta, soln)
 
   case default
     write(*,*) 'Unknown solver type... stopping'
