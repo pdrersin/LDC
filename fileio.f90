@@ -1,7 +1,7 @@
 module fileio
 
   implicit none
-  
+
 contains
 
 !================================= read_input ================================80
@@ -16,8 +16,6 @@ contains
                               re, rho, u_lid, p_guage, solver, max_iter, cfl,  &
                               k, c2, conv_toler, visc_eps
     use functions,     only : find_available_unit
-
-    implicit none
 
     integer :: nml_unit
 
@@ -56,8 +54,6 @@ contains
     use set_precision, only : dp
     use functions,     only : find_available_unit
 
-    implicit none
-
     integer,                                  intent(in) :: x_nodes, y_nodes
     real(dp), dimension(3, x_nodes, y_nodes), intent(in) :: soln
 
@@ -68,12 +64,12 @@ contains
 
     out_unit = find_available_unit()
 
-    open(out_unit, FILE='ldc.tec', status='unknown')
+    open(out_unit, FILE='ldc.dat', status='unknown')
 
     write(out_unit,*) 'TITLE="Lid Driven Cavity Solution"'
     write(out_unit,*) 'VARIABLES = "X", "Y", "Pressure", "U", "V"'
     write(out_unit,*) 'ZONE DATAPACKING=BLOCK, I=', x_nodes, ', J=', y_nodes
-    write(out_unit,*) 
+    write(out_unit,*)
 
 ! write the grid
     do j = 1, y_nodes
@@ -100,6 +96,5 @@ contains
   close(out_unit)
 
   end subroutine write_output
-
 
 end module fileio

@@ -1,3 +1,4 @@
-*.tec
+*.dat
+*.out
 *.o
 *.mod
