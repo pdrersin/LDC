@@ -62,13 +62,10 @@ contains
 ! Allocates and initializes common arrays and variables
 !
 !=============================================================================80
-
   subroutine ldc_allocate
 
     use set_precision,  only : dp
     use set_constants,  only : zero, four, big
-
-    implicit none
 
     continue
 
@@ -87,7 +84,7 @@ contains
     dt       = big
     beta     = big
 
-! Set constant variables  
+! Set constant variables
 
     mu = rho*u_lid*length/re  !Dynamic viscosity, Pa*s
     nu = mu/rho               !Kinematic viscosity, m^2/s
@@ -102,7 +99,6 @@ contains
 ! Deallocates common arrays
 !
 !=============================================================================80
-
   subroutine ldc_deallocate
 
     deallocate(dt, beta, soln, soln_new)

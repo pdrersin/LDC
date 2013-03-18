@@ -15,15 +15,12 @@ contains
 ! The main routine for the explicit solve
 !
 !=============================================================================80
-
   subroutine ldc_explicit(x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new)
 
     use set_precision, only : dp
     use set_constants, only : zero, two
     use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage, conv_toler
     use functions,     only : set_beta, set_dt
-
-    implicit none
 
     integer,                                  intent(in)    :: x_nodes, y_nodes
     real(dp),                                 intent(in)    :: dx, dy
@@ -107,7 +104,7 @@ contains
 !Pressure rescaling at the center point of the bottom floor
       Pweightfactor = soln(1,(x_nodes-x_nodes/2),1) - p_guage
       soln(1,:,:)   = soln(1,:,:) - Pweightfactor
-  
+
 !Residual Calculations
       if (mod(iter,1000) == 0) then
         write(*,300) iter, L2(1), L2(2), L2(3)
@@ -122,20 +119,18 @@ contains
     end do iter_loop
 
   end subroutine ldc_explicit
+
 !================================= ldc_sgs ===================================80
 !
 ! The main routine for the symmetric Gauss-Seidel solve
 !
 !=============================================================================80
-
   subroutine ldc_sgs(x_nodes, y_nodes, dx, dy, dt, beta, soln)
 
     use set_precision, only : dp
     use set_constants, only : zero, two
     use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage, conv_toler
     use functions,     only : set_beta, set_dt
-
-    implicit none
 
     integer,                                  intent(in)    :: x_nodes, y_nodes
     real(dp),                                 intent(in)    :: dx, dy
@@ -240,7 +235,7 @@ contains
 !Pressure rescaling at the center point of the bottom floor
       Pweightfactor = soln(1,(x_nodes-x_nodes/2),1) - p_guage
       soln(1,:,:)   = soln(1,:,:) - Pweightfactor
-  
+
 !Residual Calculations
       if (mod(iter,100) == 0) then
         write(*,300) iter, L2(1), L2(2), L2(3)
@@ -261,15 +256,12 @@ contains
 ! Forms the ldc residual, it is a pure, inlineable function
 !
 !=============================================================================80
-
   pure function create_residual(i, j, x_nodes, y_nodes, dx, dy, beta, soln)
 
     use set_precision, only : dp
     use set_constants, only : two
     use setup,         only : rho, nu, visc_eps, c2
     use functions,     only : first_derivative, second_derivative
-
-    implicit none
 
     integer,                                intent(in) :: i, j, x_nodes, y_nodes
     real(dp),                               intent(in) :: dx, dy, beta
@@ -307,7 +299,7 @@ contains
                 dy*(crvpy/(visc_eps+avgpy))*d2vdy2)
 
 ! Residual
-    create_residual(1) = (rho*(dudx+dvdy) - S)*beta**2      
+    create_residual(1) = (rho*(dudx+dvdy) - S)*beta**2
     create_residual(2) = soln(2,i,j)*dudx + soln(3,i,j)*dudy                   &
                        + dpdx/rho - nu*(d2udx2 + d2udy2)
     create_residual(3) = soln(2,i,j)*dvdx + soln(3,i,j)*dvdy                   &
@@ -320,15 +312,12 @@ contains
 ! The main routine for the implicit solve
 !
 !=============================================================================80
-
   subroutine ldc_implicit(x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new)
 
     use set_precision, only : dp
     use set_constants, only : zero, two
     use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage, conv_toler
     use functions,     only : set_beta, set_dt
-
-    implicit none
 
     integer,                                  intent(in)    :: x_nodes, y_nodes
     real(dp),                                 intent(in)    :: dx, dy
@@ -374,12 +363,12 @@ contains
 ! Residual loop
 
 !$omp parallel &
-!$omp private(i, Low, Diag, Up, RHS) 
+!$omp private(i, Low, Diag, Up, RHS)
   !$omp do
       do i = 2, x_nodes-1
 ! Form LHS
         call lhs_y_implicit(i, x_nodes, y_nodes, dx, dy, dt(i,:), beta(i,:), &
-                            soln, Low, Diag, Up) 
+                            soln, Low, Diag, Up)
 ! Form RHS
         call rhs_y_implicit(i, x_nodes, y_nodes, dx, dt(i,:), beta(i,:), &
                             soln, RHS)
@@ -417,7 +406,7 @@ contains
 !Pressure rescaling at the center point of the bottom floor
       Pweightfactor = soln(1,(x_nodes-x_nodes/2),1) - p_guage
       soln(1,:,:)   = soln(1,:,:) - Pweightfactor
-  
+
 !Residual Calculations
       if (mod(iter,1000) == 0) then
         write(*,300) iter, L2(1), L2(2), L2(3)
@@ -446,8 +435,6 @@ contains
     use set_constants, only : zero, two
     use setup,         only : rho, mu, u_lid, visc_eps, c2
     use functions,     only : first_derivative, second_derivative
-
-    implicit none
 
     integer,                                intent(in)  :: i, x_nodes, y_nodes
     real(dp),                               intent(in)  :: dx
@@ -504,8 +491,6 @@ contains
     use set_precision, only : dp
     use set_constants, only : zero, half, one, two
     use setup,         only : rho, mu, visc_eps, c2
-
-    implicit none
 
     integer,                                  intent(in)  :: i, x_nodes, y_nodes
     real(dp),                                 intent(in)  :: dx, dy
@@ -608,8 +593,6 @@ contains
 
     use set_precision, only : dp
     use set_constants, only : zero, half, one, two
-
-    implicit none
 
     integer,                          intent(in)    :: y_nodes
     real(dp), dimension(3,3,y_nodes), intent(inout) :: L, D, U
