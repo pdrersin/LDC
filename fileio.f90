@@ -2,6 +2,10 @@ module fileio
 
   implicit none
 
+  private
+
+  public :: read_input, write_output
+
 contains
 
 !================================= read_input ================================80
@@ -12,10 +16,9 @@ contains
 
   subroutine read_input
 
-    use setup,         only : x_nodes, y_nodes, length, xmin, xmax, ymin, ymax,&
-                              re, rho, u_lid, p_guage, solver, max_iter, cfl,  &
-                              k, c2, conv_toler, visc_eps
-    use functions,     only : find_available_unit
+    use setup, only : x_nodes, y_nodes, length, xmin, xmax, ymin, ymax,        &
+                      re, rho, u_lid, p_guage, solver, max_iter, cfl,          &
+                      k, c2, conv_toler, visc_eps
 
     integer :: nml_unit
 
@@ -52,7 +55,6 @@ contains
   subroutine write_output(x_nodes, y_nodes, soln)
 
     use set_precision, only : dp
-    use functions,     only : find_available_unit
 
     integer,                                  intent(in) :: x_nodes, y_nodes
     real(dp), dimension(3, x_nodes, y_nodes), intent(in) :: soln
@@ -96,5 +98,7 @@ contains
   close(out_unit)
 
   end subroutine write_output
+
+  include 'find_available_unit.f90'
 
 end module fileio

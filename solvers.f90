@@ -20,7 +20,6 @@ contains
     use set_precision, only : dp
     use set_constants, only : zero, two
     use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage, conv_toler
-    use functions,     only : set_beta, set_dt
 
     integer,                                  intent(in)    :: x_nodes, y_nodes
     real(dp),                                 intent(in)    :: dx, dy
@@ -130,7 +129,6 @@ contains
     use set_precision, only : dp
     use set_constants, only : zero, two
     use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage, conv_toler
-    use functions,     only : set_beta, set_dt
 
     integer,                                  intent(in)    :: x_nodes, y_nodes
     real(dp),                                 intent(in)    :: dx, dy
@@ -261,7 +259,6 @@ contains
     use set_precision, only : dp
     use set_constants, only : two
     use setup,         only : rho, nu, visc_eps, c2
-    use functions,     only : first_derivative, second_derivative
 
     integer,                                intent(in) :: i, j, x_nodes, y_nodes
     real(dp),                               intent(in) :: dx, dy, beta
@@ -317,7 +314,7 @@ contains
     use set_precision, only : dp
     use set_constants, only : zero, two
     use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage, conv_toler
-    use functions,     only : set_beta, set_dt
+    use matrix_manip,  only : triblocksolve
 
     integer,                                  intent(in)    :: x_nodes, y_nodes
     real(dp),                                 intent(in)    :: dx, dy
@@ -434,7 +431,6 @@ contains
     use set_precision, only : dp
     use set_constants, only : zero, two
     use setup,         only : rho, mu, u_lid, visc_eps, c2
-    use functions,     only : first_derivative, second_derivative
 
     integer,                                intent(in)  :: i, x_nodes, y_nodes
     real(dp),                               intent(in)  :: dx
@@ -593,6 +589,7 @@ contains
 
     use set_precision, only : dp
     use set_constants, only : zero, half, one, two
+    use matrix_manip,  only : mat_inv_3x3
 
     integer,                          intent(in)    :: y_nodes
     real(dp), dimension(3,3,y_nodes), intent(inout) :: L, D, U
@@ -624,5 +621,10 @@ contains
     RHS(:,y_nodes) = RHS(:,y_nodes) - matmul(inv, RHS(:,y_nodes-1))
 
   end subroutine bc_mod_y_implicit
+
+  include 'set_beta.f90'
+  include 'set_dt.f90'
+  include 'first_derivative.f90'
+  include 'second_derivative.f90'
 
 end module solvers

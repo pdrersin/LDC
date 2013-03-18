@@ -1,37 +1,33 @@
 FC=gfortran
 FCFLAGS=-O3 -g -pg -finline-functions #-traceback -openmp -parallel -fpp
+LDC_INCLUDE=-I functions/
+
 
 all: LDC
 
-LDC: set_precision.o set_constants.o functions.o setup.o fileio.o ludcmp.o triblocksolve.o solvers.o ldc.o
-	$(FC) $(FCFLAGS) set_precision.o set_constants.o functions.o setup.o fileio.o ludcmp.o triblocksolve.o solvers.o ldc.o -o ldc
+LDC: set_precision.o set_constants.o setup.o fileio.o matrix_manip.o solvers.o ldc.o
+	$(FC) $(LDC_INCLUDE) $(FCFLAGS) set_precision.o set_constants.o setup.o fileio.o matrix_manip.o solvers.o ldc.o -o ldc
 
 set_precision.o: set_precision.f90
-	$(FC) $(FCFLAGS) -c set_precision.f90
+	$(FC) $(LDC_INCLUDE) $(FCFLAGS) -c set_precision.f90
 
 set_constants.o: set_precision.o set_constants.f90
-	$(FC) $(FCFLAGS) -c set_constants.f90
-
-functions.o: set_precision.o set_constants.o functions.f90
-	$(FC) $(FCFLAGS) -c functions.f90
+	$(FC) $(LDC_INCLUDE) $(FCFLAGS) -c set_constants.f90
 
 setup.o: set_precision.o set_constants.o setup.f90
-	$(FC) $(FCFLAGS) -c setup.f90
+	$(FC) $(LDC_INCLUDE) $(FCFLAGS) -c setup.f90
 
-fileio.o: set_precision.o functions.o setup.o fileio.f90
-	$(FC) $(FCFLAGS) -c fileio.f90
+fileio.o: set_precision.o setup.o fileio.f90
+	$(FC)  $(LDC_INCLUDE) $(FCFLAGS) -c fileio.f90
 
-ludcmp.o: set_precision.o functions.o ludcmp.f90
-	$(FC) $(FCFLAGS) -c ludcmp.f90
+matrix_manip.o: set_precision.o matrix_manip.f90
+	$(FC) $(LDC_INCLUDE) $(FCFLAGS) -c matrix_manip.f90
 
-triblocksolve.o: set_precision.o ludcmp.o triblocksolve.f90
-	$(FC) $(FCFLAGS) -c triblocksolve.f90
+solvers.o: set_precision.o set_constants.o setup.o matrix_manip.o solvers.f90
+	$(FC) $(LDC_INCLUDE) $(FCFLAGS) -c solvers.f90
 
-solvers.o: set_precision.o set_constants.o functions.o setup.o solvers.f90
-	$(FC) $(FCFLAGS) -c solvers.f90
-
-ldc.o: ldc.f90
-	$(FC) $(FCFLAGS) -c ldc.f90
+ldc.o: fileio.o setup.o solvers.o ldc.f90
+	$(FC) $(LDC_INCLUDE) $(FCFLAGS) -c ldc.f90
 
 clean:
 	rm *.o *.mod
