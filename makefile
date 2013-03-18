@@ -1,5 +1,5 @@
 FC=gfortran
-FCFLAGS=-O3 #-traceback -openmp -parallel -fpp
+FCFLAGS=-O3 -g -pg -finline-functions #-traceback -openmp -parallel -fpp
 
 all: LDC
 
@@ -9,25 +9,25 @@ LDC: set_precision.o set_constants.o functions.o setup.o fileio.o ludcmp.o tribl
 set_precision.o: set_precision.f90
 	$(FC) $(FCFLAGS) -c set_precision.f90
 
-set_constants.o: set_constants.f90
+set_constants.o: set_precision.o set_constants.f90
 	$(FC) $(FCFLAGS) -c set_constants.f90
 
-functions.o: functions.f90
+functions.o: set_precision.o set_constants.o functions.f90
 	$(FC) $(FCFLAGS) -c functions.f90
 
-setup.o: setup.f90
+setup.o: set_precision.o set_constants.o setup.f90
 	$(FC) $(FCFLAGS) -c setup.f90
 
-fileio.o: fileio.f90
+fileio.o: set_precision.o functions.o setup.o fileio.f90
 	$(FC) $(FCFLAGS) -c fileio.f90
 
-ludcmp.o: ludcmp.f90
+ludcmp.o: set_precision.o functions.o ludcmp.f90
 	$(FC) $(FCFLAGS) -c ludcmp.f90
 
-triblocksolve.o: triblocksolve.f90
+triblocksolve.o: set_precision.o ludcmp.o triblocksolve.f90
 	$(FC) $(FCFLAGS) -c triblocksolve.f90
 
-solvers.o: solvers.f90
+solvers.o: set_precision.o set_constants.o functions.o setup.o solvers.f90
 	$(FC) $(FCFLAGS) -c solvers.f90
 
 ldc.o: ldc.f90
