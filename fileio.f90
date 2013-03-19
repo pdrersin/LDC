@@ -18,9 +18,9 @@ contains
 
     use setup, only : x_nodes, y_nodes, length, xmin, xmax, ymin, ymax,        &
                       re, rho, u_lid, p_guage, solver, max_iter, cfl,          &
-                      k, c2, conv_toler, visc_eps
+                      k, c2, conv_toler, visc_eps, resid_out
 
-    integer :: nml_unit
+    integer :: nml_unit, err
 
     namelist /domain/ x_nodes, y_nodes, length, xmin, xmax, ymin, ymax
 
@@ -29,6 +29,8 @@ contains
     namelist /solver_properties/ solver, max_iter, cfl, k, c2,                 &
                                  conv_toler, visc_eps
 
+    namelist /output/ resid_out
+
     continue
 
     nml_unit = find_available_unit()
@@ -36,13 +38,18 @@ contains
     open(nml_unit, file='ldc.nml', status='old')
 
     rewind(nml_unit)
-    read(nml_unit, nml=domain)
+    read( nml_unit, nml=domain, iostat=err )
 
     rewind(nml_unit)
-    read(nml_unit, nml=physical_properties)
+    read( nml_unit, nml=physical_properties, iostat=err )
 
     rewind(nml_unit)
-    read(nml_unit, nml=solver_properties)
+    read( nml_unit, nml=solver_properties, iostat=err )
+
+    resid_out = 1
+
+    rewind(nml_unit)
+    read( nml_unit, nml=output, iostat=err )
 
   end subroutine read_input
 

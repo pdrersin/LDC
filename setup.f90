@@ -10,6 +10,8 @@ module setup
 
   public :: dt, beta, soln, soln_new
 
+  public :: resid_out
+
 ! grid variables
   public :: x_nodes
   public :: y_nodes
@@ -47,7 +49,7 @@ module setup
 
   character(len=8) :: solver
 
-  integer  :: max_iter
+  integer  :: max_iter, resid_out
   real(dp) :: cfl, k, c2, conv_toler, visc_eps
 
 ! arrays

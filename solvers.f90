@@ -19,7 +19,8 @@ contains
 
     use set_precision, only : dp
     use set_constants, only : zero, two
-    use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage, conv_toler
+    use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage,           &
+                              conv_toler, resid_out
 
     integer,                                  intent(in)    :: x_nodes, y_nodes
     real(dp),                                 intent(in)    :: dx, dy
@@ -105,11 +106,11 @@ contains
       soln(1,:,:)   = soln(1,:,:) - Pweightfactor
 
 !Residual Calculations
-      if (mod(iter,1000) == 0) then
+      if ( mod(iter,resid_out) == 0 ) then
         write(*,300) iter, L2(1), L2(2), L2(3)
 300     format(1X,i8,2(e15.6),3(e15.6),4(e15.6))
 
-        if(L2(2) <= conv_toler .and. L2(3) <= conv_toler) then
+        if ( L2(2) <= conv_toler .and. L2(3) <= conv_toler ) then
           write(*,*) "Solution has converged"
           return
         end if
@@ -128,7 +129,8 @@ contains
 
     use set_precision, only : dp
     use set_constants, only : zero, two
-    use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage, conv_toler
+    use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage,           &
+                              conv_toler, resid_out
 
     integer,                                  intent(in)    :: x_nodes, y_nodes
     real(dp),                                 intent(in)    :: dx, dy
@@ -235,11 +237,11 @@ contains
       soln(1,:,:)   = soln(1,:,:) - Pweightfactor
 
 !Residual Calculations
-      if (mod(iter,100) == 0) then
+      if ( mod(iter,resid_out) == 0 ) then
         write(*,300) iter, L2(1), L2(2), L2(3)
 300     format(1X,i8,2(e15.6),3(e15.6),4(e15.6))
 
-        if(L2(2) <= conv_toler .and. L2(3) <= conv_toler) then
+        if ( L2(2) <= conv_toler .and. L2(3) <= conv_toler ) then
           write(*,*) "Solution has converged"
           return
         end if
@@ -313,7 +315,8 @@ contains
 
     use set_precision, only : dp
     use set_constants, only : zero, two
-    use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage, conv_toler
+    use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage,           &
+                              conv_toler, resid_out
     use matrix_manip,  only : triblocksolve
 
     integer,                                  intent(in)    :: x_nodes, y_nodes
@@ -405,11 +408,11 @@ contains
       soln(1,:,:)   = soln(1,:,:) - Pweightfactor
 
 !Residual Calculations
-      if (mod(iter,1000) == 0) then
+      if ( mod(iter,resid_out) == 0 ) then
         write(*,300) iter, L2(1), L2(2), L2(3)
 300     format(1X,i8,2(e15.6),3(e15.6),4(e15.6))
 
-        if(L2(2) <= conv_toler .and. L2(3) <= conv_toler) then
+        if ( L2(2) <= conv_toler .and. L2(3) <= conv_toler ) then
           write(*,*) "Solution has converged"
           return
         end if
