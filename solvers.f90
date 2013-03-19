@@ -589,7 +589,6 @@ contains
 
     use set_precision, only : dp
     use set_constants, only : zero, half, one, two
-    use matrix_manip,  only : mat_inv_3x3
 
     integer,                          intent(in)    :: y_nodes
     real(dp), dimension(3,3,y_nodes), intent(inout) :: L, D, U
@@ -603,7 +602,7 @@ contains
     bc(1,1) = one
 
 !    call matrix_inv(3, U(:,:,2), inv)
-    call mat_inv_3x3(U(:,:,2), inv)
+    inv = mat_inv_3x3( U(:,:,2) )
 
     inv = matmul(bc, inv)
 
@@ -612,7 +611,7 @@ contains
     RHS(:,1) = RHS(:,1) - matmul(inv, RHS(:,2))
 
 !    call matrix_inv(3, L(:,:,y_nodes-1), inv)
-    call mat_inv_3x3(L(:,:,y_nodes-1), inv)
+    inv = mat_inv_3x3( L(:,:,y_nodes-1) )
 
     inv = matmul(bc, inv)
 
@@ -626,5 +625,7 @@ contains
   include 'set_dt.f90'
   include 'first_derivative.f90'
   include 'second_derivative.f90'
+  include 'mat_inv_3x3.f90'
+  include 'det_3x3.f90'
 
 end module solvers
