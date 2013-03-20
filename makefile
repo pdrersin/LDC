@@ -1,5 +1,5 @@
 FC=gfortran
-FCFLAGS=-O3 -g -pg -finline-functions #-traceback -openmp -parallel -fpp
+FCFLAGS=-O3 -fopenmp -finline-functions #-traceback -openmp -parallel -fpp
 LDC_INCLUDE=-I functions/
 
 
@@ -18,7 +18,7 @@ setup.o: set_precision.o set_constants.o setup.f90
 	$(FC) $(LDC_INCLUDE) $(FCFLAGS) -c setup.f90
 
 fileio.o: set_precision.o setup.o fileio.f90
-	$(FC)  $(LDC_INCLUDE) $(FCFLAGS) -c fileio.f90
+	$(FC) $(LDC_INCLUDE) $(FCFLAGS) -c fileio.f90
 
 matrix_manip.o: set_precision.o matrix_manip.f90
 	$(FC) $(LDC_INCLUDE) $(FCFLAGS) -c matrix_manip.f90
