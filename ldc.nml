@@ -24,3 +24,7 @@
   conv_toler = 1.0e-9
   visc_eps   = 1.0e-7
 /
+
+&output
+  resid_out = 10
+/
