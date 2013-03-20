@@ -15,7 +15,7 @@ contains
 ! The main routine for the explicit solve
 !
 !=============================================================================80
-  subroutine ldc_explicit(x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new)
+  subroutine ldc_explicit( x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new )
 
     use set_precision, only : dp
     use set_constants, only : zero, two
@@ -30,15 +30,17 @@ contains
     real(dp), dimension(3) :: R, L1, L2, Linf
 
     integer  :: iter, i, j, eq
-    real(dp) :: Pweightfactor
+    real(dp) :: Pweightfactor, internal_nodes
 
     continue
 
+    internal_nodes = real((x_nodes-2)*(y_nodes-2),dp)
+
     iter_loop : do iter = 1, max_iter
-      R(:)    = zero
-      L1(:)   = zero
-      L2(:)   = zero
-      Linf(:) = zero
+      R    = zero
+      L1   = zero
+      L2   = zero
+      Linf = zero
 
 ! Calculate artifical compressibility terms
       do j = 2, y_nodes-1
@@ -66,12 +68,10 @@ contains
 
           R = create_residual(i, j, x_nodes, y_nodes, dx, dy, beta(i,j), soln )
 
-! Update residual
-          do eq = 1,3
-            L1(eq)   = L1(eq) + R(eq)
-            L2(eq)   = L2(eq) + R(eq)**2
-            Linf(eq) = max(Linf(eq), R(eq))
-          end do
+! Update residual norms
+          L1   = L1 + R
+          L2   = L2 + R**2
+          Linf = max(Linf, R)
 
 ! Euler explicit solve
           do eq = 1,3
@@ -84,8 +84,8 @@ contains
 !$omp end parallel
 
 ! Update L1 and L2 residuals
-      L1(:) =      L1(:)  / real((x_nodes-2)*(y_nodes-2),dp)
-      L2(:) = sqrt(L2(:)) / real((x_nodes-2)*(y_nodes-2),dp)
+      L1 =      L1  / internal_nodes
+      L2 = sqrt(L2) / internal_nodes
 
 ! Update soln
       soln = soln_new
@@ -108,7 +108,7 @@ contains
 !Residual Calculations
       if ( mod(iter,resid_out) == 0 ) then
         write(*,300) iter, L2(1), L2(2), L2(3)
-300     format(1X,i8,2(e15.6),3(e15.6),4(e15.6))
+300     format(1X,i8,3e15.6)
 
         if ( L2(2) <= conv_toler .and. L2(3) <= conv_toler ) then
           write(*,*) "Solution has converged"
@@ -125,7 +125,7 @@ contains
 ! The main routine for the symmetric Gauss-Seidel solve
 !
 !=============================================================================80
-  subroutine ldc_sgs(x_nodes, y_nodes, dx, dy, dt, beta, soln)
+  subroutine ldc_sgs( x_nodes, y_nodes, dx, dy, dt, beta, soln )
 
     use set_precision, only : dp
     use set_constants, only : zero, two
@@ -140,15 +140,17 @@ contains
     real(dp), dimension(3) :: R, L1, L2, Linf
 
     integer  :: iter, i, j, eq
-    real(dp) :: Pweightfactor
+    real(dp) :: Pweightfactor, internal_nodes
 
     continue
 
+    internal_nodes = real((x_nodes-2)*(y_nodes-2),dp)
+
     iter_loop : do iter = 1, max_iter
-      R(:)    = zero
-      L1(:)   = zero
-      L2(:)   = zero
-      Linf(:) = zero
+      R    = zero
+      L1   = zero
+      L2   = zero
+      Linf = zero
 
 ! Forward sweep !
 
@@ -207,20 +209,19 @@ contains
       b_sgs : do i = 2, x_nodes-1
         do j = 2, y_nodes-1
           R = create_residual(i, j, x_nodes, y_nodes, dx, dy, beta(i,j), soln )
-! Update residual
-          do eq = 1,3
-            L1(eq)   = L1(eq) + R(eq)
-            L2(eq)   = L2(eq) + R(eq)**2
-            Linf(eq) = max(Linf(eq), R(eq))
-          end do
+! Update residual norms
+          L1   = L1 + R
+          L2   = L2 + R**2
+          Linf = max(Linf, R)
+
 ! Update solution
           soln(:,i,j) = soln(:,i,j) - dt(i,j)*R(:)
         end do
       end do b_sgs
 
 ! Update L1 and L2 residuals
-      L1(:) =      L1(:)  / real((x_nodes-2)*(y_nodes-2),dp)
-      L2(:) = sqrt(L2(:)) / real((x_nodes-2)*(y_nodes-2),dp)
+      L1(:) =      L1(:)  / internal_nodes
+      L2(:) = sqrt(L2(:)) / internal_nodes
 
 !Calculate side wall pressures
       do j = 1,y_nodes
@@ -239,7 +240,7 @@ contains
 !Residual Calculations
       if ( mod(iter,resid_out) == 0 ) then
         write(*,300) iter, L2(1), L2(2), L2(3)
-300     format(1X,i8,2(e15.6),3(e15.6),4(e15.6))
+300     format(1X,i8,3e15.6)
 
         if ( L2(2) <= conv_toler .and. L2(3) <= conv_toler ) then
           write(*,*) "Solution has converged"
@@ -256,7 +257,7 @@ contains
 ! Forms the ldc residual, it is a pure, inlineable function
 !
 !=============================================================================80
-  pure function create_residual(i, j, x_nodes, y_nodes, dx, dy, beta, soln)
+  pure function create_residual( i, j, x_nodes, y_nodes, dx, dy, beta, soln )
 
     use set_precision, only : dp
     use set_constants, only : two
@@ -311,7 +312,7 @@ contains
 ! The main routine for the implicit solve
 !
 !=============================================================================80
-  subroutine ldc_implicit(x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new)
+  subroutine ldc_implicit( x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new )
 
     use set_precision, only : dp
     use set_constants, only : zero, two
@@ -324,14 +325,16 @@ contains
     real(dp), dimension(x_nodes, y_nodes),    intent(inout) :: dt, beta
     real(dp), dimension(3, x_nodes, y_nodes), intent(inout) :: soln, soln_new
 
-    real(dp), dimension(3) :: R, L1, L2, Linf
+    real(dp), dimension(3) :: R, L2
     real(dp), allocatable, dimension(:,:)   :: RHS
     real(dp), allocatable, dimension(:,:,:) :: Low, Diag, Up
 
     integer  :: iter, i, j, eq
-    real(dp) :: Pweightfactor
+    real(dp) :: Pweightfactor, internal_nodes
 
     continue
+
+    internal_nodes = real((x_nodes-2)*(y_nodes-2),dp)
 
     allocate(Low(3,3,y_nodes),Diag(3,3,y_nodes),Up(3,3,y_nodes),RHS(3,y_nodes))
 
@@ -341,10 +344,8 @@ contains
     RHS  = zero
 
     iter_loop : do iter = 1, max_iter
-      R(:)    = zero
-      L1(:)   = zero
-      L2(:)   = zero
-      Linf(:) = zero
+      R    = zero
+      L2   = zero
 
 ! Calculate artifical compressibility terms
       do j = 2, y_nodes-1
@@ -367,10 +368,10 @@ contains
   !$omp do
       do i = 2, x_nodes-1
 ! Form LHS
-        call lhs_y_implicit(i, x_nodes, y_nodes, dx, dy, dt(i,:), beta(i,:), &
+        call lhs_y_implicit(i, x_nodes, y_nodes, dx, dy, dt(i,:), beta(i,:),   &
                             soln, Low, Diag, Up)
 ! Form RHS
-        call rhs_y_implicit(i, x_nodes, y_nodes, dx, dt(i,:), beta(i,:), &
+        call rhs_y_implicit(i, x_nodes, y_nodes, dx, dt(i,:), beta(i,:),       &
                             soln, RHS)
 ! Modify structure for BC
         call bc_mod_y_implicit(y_nodes, Low, Diag, Up, RHS)
@@ -391,8 +392,7 @@ contains
           L2(3) = L2(3) + ((soln_new(3,i,j)-soln(3,i,j))/dt(i,j))**2
         end do
       end do
-      L1(:) =      L1(:)  / real((x_nodes-2)*(y_nodes-2),dp)
-      L2(:) = sqrt(L2(:)) / real((x_nodes-2)*(y_nodes-2),dp)
+      L2 = sqrt(L2) / internal_nodes
 
 ! Update soln
       soln = soln_new
@@ -410,7 +410,7 @@ contains
 !Residual Calculations
       if ( mod(iter,resid_out) == 0 ) then
         write(*,300) iter, L2(1), L2(2), L2(3)
-300     format(1X,i8,2(e15.6),3(e15.6),4(e15.6))
+300     format(1X,i8,3e15.6)
 
         if ( L2(2) <= conv_toler .and. L2(3) <= conv_toler ) then
           write(*,*) "Solution has converged"
@@ -429,7 +429,7 @@ contains
 !
 !
 !=============================================================================80
-  subroutine rhs_y_implicit(i, x_nodes, y_nodes, dx, dt, beta, soln, RHS)
+  subroutine rhs_y_implicit( i, x_nodes, y_nodes, dx, dt, beta, soln, RHS )
 
     use set_precision, only : dp
     use set_constants, only : zero, two
@@ -484,8 +484,8 @@ contains
 !
 !
 !=============================================================================80
-  subroutine lhs_y_implicit(i, x_nodes, y_nodes, dx, dy, dt, beta, &
-                            soln, Low, Diag, Up)
+  subroutine lhs_y_implicit( i, x_nodes, y_nodes, dx, dy, dt, beta,            &
+                             soln, Low, Diag, Up )
 
     use set_precision, only : dp
     use set_constants, only : zero, half, one, two
@@ -503,8 +503,8 @@ contains
 
     continue
 
-    Ident = reshape( (/one, zero, zero, zero, one, zero, zero, zero, one/) ,   &
-                    (/3,3/) )
+    Ident = reshape( [one, zero, zero, zero, one, zero, zero, zero, one],      &
+                     [3,3] )
 
     Low(:,:,1)  = zero
     Diag(:,:,1) = Ident
@@ -588,7 +588,7 @@ contains
 !
 ! And this preserves the block tridiagonal system
 
-  subroutine bc_mod_y_implicit(y_nodes, L, D, U, RHS)
+  subroutine bc_mod_y_implicit( y_nodes, L, D, U, RHS )
 
     use set_precision, only : dp
     use set_constants, only : zero, half, one, two
