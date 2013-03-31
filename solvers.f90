@@ -309,6 +309,46 @@ contains
 
   end function create_residual
 
+!============================= ldc_full_implicit =============================80
+!
+! The main routine for the full implicit solve, requires SPARSKIT2
+!
+!=============================================================================80
+  subroutine ldc_full_implicit( x_nodes, y_nodes, dx, dy, soln, soln_new )
+
+    use set_precision, only : dp
+    use set_constants, only : zero, two
+    use setup,         only : max_iter, dtd, cfl, k, u_lid, p_guage,           &
+                              conv_toler, resid_out
+
+    integer,                                  intent(in)    :: x_nodes, y_nodes
+    real(dp),                                 intent(in)    :: dx, dy
+    real(dp), dimension(3, x_nodes, y_nodes), intent(inout) :: soln, soln_new
+
+    real(dp), dimension(3) :: R, L1, L2, Linf
+
+    integer  :: iter, i, j, eq, n_nz, n_col, n_row
+    real(dp) :: Pweightfactor, internal_nodes
+
+
+    integer,  dimension(3*x_nodes*y_nodes) :: ia
+    integer,  allocatable, dimension(:)    :: ja
+    real(dp), dimension(3*x_nodes*y_nodes) :: rhs, dsoln
+    real(dp), allocatable, dimension(:)    :: lhs
+    real(dp), dimension(x_nodes, y_nodes)  :: dt, beta
+
+    continue
+
+    n_row = 3*x_nodes*y_nodes
+    n_col = n_row
+    n_nz = 9*(5*(x_nodes-2)*(y_nodes-2) + 6*(x_nodes + y_nodes - 4) + 8)
+
+    allocate( ja(n_nz), lhs(n_nz) )
+
+    deallocate(lhs, ja)
+
+  end subroutine ldc_full_implicit
+
 !=============================== ldc_implicit ================================80
 !
 ! The main routine for the implicit solve
