@@ -8,7 +8,7 @@ module setup
 
   public :: ldc_allocate, ldc_deallocate
 
-  public :: dt, beta, soln, soln_new
+  public :: soln, soln_new
 
   public :: resid_out
 
@@ -54,7 +54,6 @@ module setup
 
 ! arrays
 
-  real(dp), allocatable, dimension(:,:)   :: dt, beta
   real(dp), allocatable, dimension(:,:,:) :: soln, soln_new
 
 contains
@@ -72,7 +71,6 @@ contains
     continue
 
     allocate(soln(3,x_nodes,y_nodes), soln_new(3,x_nodes,y_nodes))
-    allocate(dt(x_nodes,y_nodes), beta(x_nodes,y_nodes))
 
 ! Set BC's and initialize matrices
 
@@ -83,8 +81,6 @@ contains
     soln(2,:,y_nodes) = u_lid
 
     soln_new = soln
-    dt       = big
-    beta     = big
 
 ! Set constant variables
 
@@ -103,7 +99,7 @@ contains
 !=============================================================================80
   subroutine ldc_deallocate
 
-    deallocate(dt, beta, soln, soln_new)
+    deallocate( soln, soln_new )
 
   end subroutine ldc_deallocate
 

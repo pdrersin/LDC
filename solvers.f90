@@ -15,7 +15,7 @@ contains
 ! The main routine for the explicit solve
 !
 !=============================================================================80
-  subroutine ldc_explicit( x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new )
+  subroutine ldc_explicit( x_nodes, y_nodes, dx, dy, soln, soln_new )
 
     use set_precision, only : dp
     use set_constants, only : zero, two
@@ -24,13 +24,14 @@ contains
 
     integer,                                  intent(in)    :: x_nodes, y_nodes
     real(dp),                                 intent(in)    :: dx, dy
-    real(dp), dimension(x_nodes, y_nodes),    intent(inout) :: dt, beta
     real(dp), dimension(3, x_nodes, y_nodes), intent(inout) :: soln, soln_new
 
     real(dp), dimension(3) :: R, L1, L2, Linf
 
     integer  :: iter, i, j, eq
     real(dp) :: Pweightfactor, internal_nodes
+
+    real(dp), dimension(x_nodes, y_nodes) :: dt, beta
 
     continue
 
@@ -125,7 +126,7 @@ contains
 ! The main routine for the symmetric Gauss-Seidel solve
 !
 !=============================================================================80
-  subroutine ldc_sgs( x_nodes, y_nodes, dx, dy, dt, beta, soln )
+  subroutine ldc_sgs( x_nodes, y_nodes, dx, dy, soln )
 
     use set_precision, only : dp
     use set_constants, only : zero, two
@@ -134,13 +135,14 @@ contains
 
     integer,                                  intent(in)    :: x_nodes, y_nodes
     real(dp),                                 intent(in)    :: dx, dy
-    real(dp), dimension(x_nodes, y_nodes),    intent(inout) :: dt, beta
     real(dp), dimension(3, x_nodes, y_nodes), intent(inout) :: soln
 
     real(dp), dimension(3) :: R, L1, L2, Linf
 
     integer  :: iter, i, j, eq
     real(dp) :: Pweightfactor, internal_nodes
+
+    real(dp), dimension(x_nodes, y_nodes) :: dt, beta
 
     continue
 
@@ -312,7 +314,7 @@ contains
 ! The main routine for the implicit solve
 !
 !=============================================================================80
-  subroutine ldc_implicit( x_nodes, y_nodes, dx, dy, dt, beta, soln, soln_new )
+  subroutine ldc_implicit( x_nodes, y_nodes, dx, dy, soln, soln_new )
 
     use set_precision, only : dp
     use set_constants, only : zero, two
@@ -322,12 +324,12 @@ contains
 
     integer,                                  intent(in)    :: x_nodes, y_nodes
     real(dp),                                 intent(in)    :: dx, dy
-    real(dp), dimension(x_nodes, y_nodes),    intent(inout) :: dt, beta
     real(dp), dimension(3, x_nodes, y_nodes), intent(inout) :: soln, soln_new
 
-    real(dp), dimension(3) :: R, L2
-    real(dp), allocatable, dimension(:,:)   :: RHS
-    real(dp), allocatable, dimension(:,:,:) :: Low, Diag, Up
+    real(dp), dimension(3)                :: R, L2
+    real(dp), dimension(3, y_nodes)       :: RHS
+    real(dp), dimension(x_nodes, y_nodes) :: dt, beta
+    real(dp), dimension(3, 3, y_nodes)    :: Low, Diag, Up
 
     integer  :: iter, i, j, eq
     real(dp) :: Pweightfactor, internal_nodes
@@ -335,8 +337,6 @@ contains
     continue
 
     internal_nodes = real((x_nodes-2)*(y_nodes-2),dp)
-
-    allocate(Low(3,3,y_nodes),Diag(3,3,y_nodes),Up(3,3,y_nodes),RHS(3,y_nodes))
 
     Low  = zero
     Diag = zero
@@ -419,8 +419,6 @@ contains
       end if
 
     end do iter_loop
-
-    deallocate(Low, Diag, Up, RHS)
 
   end subroutine ldc_implicit
 
